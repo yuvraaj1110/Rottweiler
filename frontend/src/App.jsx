@@ -39,9 +39,11 @@ function App() {
     formData.append('video', videoFile);
     formData.append('start_time', startTime);
 
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
     try {
       const response = await axios.post(
-        'http://localhost:8000/process-video',
+        `${apiUrl}/process-video`,
         formData,
         {
           headers: {
@@ -196,7 +198,7 @@ function App() {
                         <span className="font-mono text-sm">{clip.name}</span>
                       </div>
                       <a 
-                        href={clip.url} 
+                        href={clip.url.startsWith('/') ? `${apiUrl}${clip.url}` : clip.url}
                         download={clip.name}
                         className="inline-flex items-center px-3 py-1 bg-gradient-to-b from-midnight-cobalt to-midnight-accent hover:brightness-110 text-white text-xs font-semibold rounded transition-colors"
                       >

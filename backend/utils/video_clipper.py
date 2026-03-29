@@ -3,10 +3,8 @@ import subprocess
 import os
 from datetime import datetime, timezone
 from typing import List, Tuple, Optional
-import boto3
-from botocore.exceptions import NoCredentialsError
 
-DB_PATH = os.getenv("DB_PATH", "../backend/motion_logs.db")
+DB_PATH = os.getenv("DB_PATH", str(os.path.dirname(os.path.dirname(__file__)) + "/motion_logs.db"))
 
 
 def get_video_start_time(video_start_time_str: str) -> datetime:
@@ -107,96 +105,18 @@ def calculate_relative_offset(video_start: datetime, event_time: datetime) -> fl
     return (event_time - video_start).total_seconds()
 
 
-def _upload_to_vultr(local_file_path: str, object_name: str) -> str:
-    """
-    Upload a file to Vultr Object Storage and return the public URL.
-
-    Args:
-        local_file_path: Path to the local file to upload
-        object_name: Name/key for the object in the bucket
-
-    Returns:
-        Public URL of the uploaded file
-    """
-    # Get Vultr credentials from environment
-    access_key = os.getenv("VULTR_ACCESS_KEY")
-    secret_key = os.getenv("VULTR_SECRET_KEY")
-    hostname = os.getenv("VULTR_HOSTNAME")
-    bucket_name = os.getenv("VULTR_BUCKET_NAME")
-
-    # Validate environment variables
-    if not all([access_key, secret_key, hostname, bucket_name]):
-        missing = []
-        if not access_key:
-            missing.append("VULTR_ACCESS_KEY")
-        if not secret_key:
-            missing.append("VULTR_SECRET_KEY")
-        if not hostname:
-            missing.append("VULTR_HOSTNAME")
-        if not bucket_name:
-            missing.append("VULTR_BUCKET_NAME")
-        raise ValueError(
-            f"Missing Vultr Object Storage environment variables: {', '.join(missing)}"
-        )
-
-    # Create S3 client for Vultr
-    s3_client = boto3.client(
-        "s3",
-        endpoint_url=f"https://{hostname}",
-        aws_access_key_id=access_key,
-        aws_secret_access_key=secret_key,
-    )
-
-    try:
-        # Upload file with public-read ACL and video/mp4 content type
-        s3_client.upload_file(
-            local_file_path,
-            bucket_name,
-            object_name,
-            ExtraArgs={"ACL": "public-read", "ContentType": "video/mp4"},
-        )
-    except NoCredentialsError:
-        raise RuntimeError("Vultr credentials not available or invalid")
-    except Exception as e:
-        raise RuntimeError(f"Failed to upload to Vultr: {str(e)}")
-
-    # Construct and return public URL
-    return f"https://{hostname}/{bucket_name}/{object_name}"
-
-
 def clip_video(file_path: str, start_time_str: str) -> List[str]:
     """
     Clip video based on motion events logged during the video's duration.
-    After creating each clip, upload it to Vultr Object Storage and delete the local copy.
+    Clips are saved locally in the same directory as the input file.
 
     Args:
         file_path: Path to the input video file
         start_time_str: String representing when the video started recording
 
     Returns:
-        List of public Vultr URLs for the generated clips
+        List of local paths for the generated clips
     """
-    # Check for Vultr environment variables early
-    access_key = os.getenv("VULTR_ACCESS_KEY")
-    secret_key = os.getenv("VULTR_SECRET_KEY")
-    hostname = os.getenv("VULTR_HOSTNAME")
-    bucket_name = os.getenv("VULTR_BUCKET_NAME")
-
-    if not all([access_key, secret_key, hostname, bucket_name]):
-        missing = []
-        if not access_key:
-            missing.append("VULTR_ACCESS_KEY")
-        if not secret_key:
-            missing.append("VULTR_SECRET_KEY")
-        if not hostname:
-            missing.append("VULTR_HOSTNAME")
-        if not bucket_name:
-            missing.append("VULTR_BUCKET_NAME")
-        raise ValueError(
-            f"Missing Vultr Object Storage environment variables: {', '.join(missing)}. "
-            "Please set VULTR_ACCESS_KEY, VULTR_SECRET_KEY, VULTR_HOSTNAME, VULTR_BUCKET_NAME"
-        )
-
     # Parse video start time
     video_start = get_video_start_time(start_time_str)
 
@@ -210,7 +130,7 @@ def clip_video(file_path: str, start_time_str: str) -> List[str]:
         print("No motion events found during video duration")
         return []
 
-    upload_urls = []
+    clip_paths = []
     base_name = os.path.splitext(os.path.basename(file_path))[0]
     output_dir = os.path.dirname(file_path)
 
@@ -247,32 +167,22 @@ def clip_video(file_path: str, start_time_str: str) -> List[str]:
             file_path,
             "-c",
             "copy",
+            "-y",  # Overwrite if exists
             output_path,
         ]
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             print(f"Created clip: {output_path}")
+            clip_paths.append(output_path)
         except subprocess.CalledProcessError as e:
             print(f"Error creating clip for log {log_id}: {e.stderr}")
             continue  # Skip to next log if FFmpeg fails
 
-        # Upload the clip to Vultr
-        try:
-            public_url = _upload_to_vultr(output_path, output_filename)
-            upload_urls.append(public_url)
-            # Delete local clip after successful upload
-            os.remove(output_path)
-            print(f"Uploaded and removed local clip: {output_filename}")
-        except Exception as e:
-            print(f"Failed to upload clip {output_filename}: {str(e)}")
-            # Keep local file for debugging if upload fails
-            continue
-
-    return upload_urls
+    return clip_paths
 
 
 if __name__ == "__main__":
     # Example usage
-    print("Video Clipper Utility with Vultr Integration")
-    print("===========================================")
+    print("Video Clipper Utility")
+    print("=====================")
