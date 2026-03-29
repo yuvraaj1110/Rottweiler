@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global styles for Security Terminal aesthetic */
+/* Global styles for Midnight Protocol aesthetic */
 body {
-  @apply bg-zinc-950 text-slate-200;
+  @apply bg-midnight-bg text-slate-200 font-terminal;
 }
 
 /* Ensure full height for proper layout */
