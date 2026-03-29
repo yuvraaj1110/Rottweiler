@@ -14,7 +14,8 @@ utils_path = Path(__file__).parent.parent / "utils"
 sys.path.append(str(utils_path))
 
 # Database setup
-DB_PATH = os.getenv("DB_PATH", "motion_logs.db")
+PROJECT_ROOT = Path(__file__).parent.parent.absolute()
+DB_PATH = os.getenv("DB_PATH", str(PROJECT_ROOT / "backend" / "motion_logs.db"))
 
 
 def init_db():

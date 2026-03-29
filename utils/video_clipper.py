@@ -3,8 +3,10 @@ import subprocess
 import os
 from datetime import datetime, timezone
 from typing import List, Tuple, Optional
+from pathlib import Path
 
-DB_PATH = os.getenv("DB_PATH", "../backend/motion_logs.db")
+PROJECT_ROOT = Path(__file__).parent.parent.absolute()
+DB_PATH = os.getenv("DB_PATH", str(PROJECT_ROOT / "backend" / "motion_logs.db"))
 
 
 def get_video_start_time(video_start_time_str: str) -> datetime:
@@ -72,7 +74,7 @@ def get_motion_logs_during_video(
         """
         SELECT id, event_timestamp 
         FROM motion_logs 
-        WHERE strftime('%s', event_timestamp) BETWEEN ? AND ?
+        WHERE CAST(strftime('%s', event_timestamp) AS INTEGER) BETWEEN ? AND ?
         ORDER BY event_timestamp
     """,
         (video_start.timestamp(), video_end),
