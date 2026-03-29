@@ -7,9 +7,16 @@ export default defineConfig({
   server: {
     port: 3000,
     strictPort: true,
+    // Proxy API calls to the local FastAPI backend during development
+    proxy: {
+      '/process-video': 'http://localhost:8000',
+      '/log-event': 'http://localhost:8000',
+      '/logs': 'http://localhost:8000',
+      '/clips': 'http://localhost:8000',
+    },
   },
   preview: {
     port: 3000,
     strictPort: true,
-  }
+  },
 });

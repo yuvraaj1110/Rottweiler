@@ -40,8 +40,11 @@ function App() {
     formData.append('start_time', startTime);
 
     try {
+      // Use a relative URL so the request goes to whichever origin is serving
+      // the app — works both in local dev (via Vite proxy) and in production
+      // where FastAPI serves the built frontend on the same port.
       const response = await axios.post(
-        'http://localhost:8000/process-video',
+        '/process-video',
         formData,
         {
           headers: {
