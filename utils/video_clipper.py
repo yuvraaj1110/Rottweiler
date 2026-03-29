@@ -139,20 +139,22 @@ def clip_video(file_path: str, start_time_str: str) -> List[str]:
         # Calculate relative offset
         offset_seconds = calculate_relative_offset(video_start, event_time)
 
-        # Handle Short-Video Protocol
-        if video_duration < 40:
-            # Short Video Mode (< 40s)
-            ffmpeg_start = max(0, offset_seconds - 1)
-            ffmpeg_duration = "2"
-            filename_suffix = "_short"
-        else:
-            # Standard Mode (>= 40s)
-            ffmpeg_start = max(0, offset_seconds - 5)
+        # Handle Dynamic Clipping Protocol
+        if video_duration < 60:
+            # Short Video Mode (< 60s)
+            mode = "short"
             ffmpeg_duration = "10"
-            filename_suffix = ""
+            # 5s pre-event buffer (centers the 10s clip on the event)
+            ffmpeg_start = max(0, offset_seconds - 5)
+        else:
+            # Long Video Mode (>= 60s)
+            mode = "long"
+            ffmpeg_duration = "60"
+            # 30s pre-event buffer (centers the 60s clip on the event)
+            ffmpeg_start = max(0, offset_seconds - 30)
 
         # Create output filename
-        output_filename = f"{base_name}_clip_{log_id}_{int(offset_seconds)}s{filename_suffix}.mp4"
+        output_filename = f"{base_name}_{mode}_{log_id}.mp4"
         output_path = os.path.join(output_dir, output_filename)
 
         # Run FFmpeg command
