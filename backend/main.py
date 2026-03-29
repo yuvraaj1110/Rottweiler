@@ -1,44 +1,23 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
-import shutil
-from pydantic import BaseModel
-from datetime import datetime, timezone
-import sqlite3
 import os
-import sys
+import tempfile
 from pathlib import Path
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-# Add utils directory to path
-utils_path = Path(__file__).parent / "utils"
-sys.path.append(str(utils_path))
+# Import the clipper utility
+from utils.video_clipper import clip_video
 
-# Database setup
-DB_PATH = "/app/data/rottweiler.db"
+app = FastAPI(title="Rottweiler Backend")
 
+# 1. Setup local storage directory
+CLIPS_DIR = Path("clips")
+CLIPS_DIR.mkdir(exist_ok=True)
 
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS motion_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_timestamp TIMESTAMP NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
+# 2. Mount the directory so files are accessible via URL
+# Example: https://your-app.up.railway.app/clips/video.mp4
+app.mount("/clips", StaticFiles(directory=CLIPS_DIR), name="clips")
 
-
-# Pydantic model for log event (though we just store current time)
-class LogEvent(BaseModel):
-    # No input needed; we generate timestamp server-side
-    pass
-
-
-app = FastAPI()
-
-# Add CORS middleware to allow all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -47,83 +26,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.on_event("startup")
-def startup_event():
-    init_db()
-
-
-# Create clips directory for serving generated videos
-clips_dir = Path("/app/clips")
-clips_dir.mkdir(exist_ok=True)
-app.mount("/clips", StaticFiles(directory="/app/clips"), name="clips")
-
-
 @app.post("/process-video")
-async def process_video(video: UploadFile = File(...), start_time: str = Form(...)):
-    """Process uploaded video and generate clips based on motion events during video duration."""
-    # Save uploaded file temporarily
-    temp_dir = Path("./temp")
-    temp_dir.mkdir(exist_ok=True)
-    temp_file_path = temp_dir / video.filename
+async def process_video(
+    video: UploadFile = File(...), 
+    start_time: str = Form(...)
+):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_file_path = Path(temp_dir) / video.filename
+        
+        try:
+            with open(temp_file_path, "wb") as buffer:
+                content = await video.read()
+                buffer.write(content)
+            
+            # The clipper will now save files to our local CLIPS_DIR
+            generated_filenames = clip_video(str(temp_file_path), start_time, str(CLIPS_DIR))
+            
+            if not generated_filenames:
+                return {"message": "No motion events found.", "clips": []}
 
-    try:
-        # Write uploaded file to temp location
-        with open(temp_file_path, "wb") as buffer:
-            content = await video.read()
-            buffer.write(content)
+            # Prepare URLs relative to this server
+            clips_metadata = []
+            for filename in generated_filenames:
+                clips_metadata.append({
+                    "name": filename,
+                    "url": f"/clips/{filename}"
+                })
 
-        # Process video using our clipper utility
-        from video_clipper import clip_video
+            return {"clips": clips_metadata}
 
-        clip_paths = clip_video(str(temp_file_path), start_time)
-
-        # Move clips to serving directory and prepare response
-        clips = []
-        for clip_path in clip_paths:
-            clip_path_obj = Path(clip_path)
-            clip_name = clip_path_obj.name
-            # Move clip to serving directory
-            serving_path = clips_dir / clip_name
-            shutil.move(str(clip_path_obj), str(serving_path))
-
-            clips.append({"name": clip_name, "url": f"/clips/{clip_name}"})
-
-        return {"clips": clips}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-    finally:
-        # Clean up temp file
-        if temp_file_path.exists():
-            temp_file_path.unlink()
-
-
-@app.post("/log-event")
-def log_event():
-    """Save the current server time to the motion_logs table."""
-    now = datetime.now(timezone.utc)
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT INTO motion_logs (event_timestamp) VALUES (?)", (now,))
-    conn.commit()
-    conn.close()
-    return {"id": c.lastrowid, "event_timestamp": now.isoformat()}
-
-
-# Optional: get logs for testing
-@app.get("/logs")
-def get_logs():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT id, event_timestamp FROM motion_logs ORDER BY event_timestamp")
-    rows = c.fetchall()
-    conn.close()
-    return [{"id": row[0], "event_timestamp": row[1]} for row in rows]
-
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
 @app.get("/health")
-def health_check():
-    """Health check endpoint for deployment monitoring."""
+async def health_check():
     return {"status": "online"}
