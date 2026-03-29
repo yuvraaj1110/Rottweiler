@@ -1,7 +1,7 @@
 import sqlite3
 import subprocess
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Tuple, Optional
 
 DB_PATH = os.getenv("DB_PATH", "../backend/motion_logs.db")
