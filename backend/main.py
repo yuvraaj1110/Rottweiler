@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 from pydantic import BaseModel
@@ -117,3 +118,23 @@ def get_logs():
     rows = c.fetchall()
     conn.close()
     return [{"id": row[0], "event_timestamp": row[1]} for row in rows]
+
+
+# ── Frontend static file serving ──────────────────────────────────────────────
+# The Vite build output is copied to ../frontend/dist relative to this file.
+# We serve the assets directory first, then fall back to index.html for all
+# other routes so that client-side routing works correctly.
+_frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+
+if _frontend_dist.is_dir():
+    app.mount(
+        "/assets",
+        StaticFiles(directory=str(_frontend_dist / "assets")),
+        name="frontend-assets",
+    )
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    def serve_frontend(full_path: str):
+        """Catch-all: serve index.html so the React SPA handles its own routing."""
+        index = _frontend_dist / "index.html"
+        return FileResponse(str(index))
