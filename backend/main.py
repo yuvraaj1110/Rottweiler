@@ -10,12 +10,11 @@ import sys
 from pathlib import Path
 
 # Add utils directory to path
-utils_path = Path(__file__).parent.parent / "utils"
+utils_path = Path(__file__).parent / "utils"
 sys.path.append(str(utils_path))
 
 # Database setup
-PROJECT_ROOT = Path(__file__).parent.parent.absolute()
-DB_PATH = os.getenv("DB_PATH", str(PROJECT_ROOT / "backend" / "motion_logs.db"))
+DB_PATH = os.getenv("DB_PATH", "/app/data/rottweiler.db")
 
 
 def init_db():

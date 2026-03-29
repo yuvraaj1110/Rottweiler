@@ -5,8 +5,7 @@ from datetime import datetime, timezone
 from typing import List, Tuple, Optional
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).parent.parent.absolute()
-DB_PATH = os.getenv("DB_PATH", str(PROJECT_ROOT / "backend" / "motion_logs.db"))
+DB_PATH = os.getenv("DB_PATH", "/app/data/rottweiler.db")
 
 
 def get_video_start_time(video_start_time_str: str) -> datetime:
