@@ -34,31 +34,70 @@ The interface is engineered for high visibility in low-light "Security Terminal"
 The backend uses **SQLite** for motion log storage, with several technical optimizations to ensure synchronization:
 
 -   **SQL Timestamp Casting:** To resolve type-mismatch errors in SQLite (where `strftime` returns strings), the system uses `CAST(strftime('%s', event_timestamp) AS INTEGER)` to perform precise numeric comparisons between Unix epochs.
--   **Absolute Path Resolution:** `DB_PATH` is resolved dynamically relative to the `PROJECT_ROOT`, ensuring consistent database connections regardless of the server's working directory.
+-   **Absolute Path Resolution:** In production, `DB_PATH` is hardcoded to `/app/data/rottweiler.db` and the clips directory to `/app/clips`, ensuring alignment with Docker volume mounts.
 -   **Metadata Handling:** The `/process-video` endpoint accepts `UploadFile` (FastAPI) and handles multi-part form data for `start_time` (ISO8601/UTC).
 
 ---
 
 ## 🎞️ Video Processing: "Dynamic Clipping Protocol"
 
-The core utility (`utils/video_clipper.py`) uses a duration-aware logic to determine how motion clips are extracted:
+The core utility (`backend/utils/video_clipper.py`) uses duration-aware logic to determine how motion clips are extracted:
 
-| Video Duration | Mode | Pre-Event Buffer | Total Clip Duration | Filename Tag |
+| Video Duration | Mode | Pre-Event Buffer | Total Clip Duration | Filename Format |
 | :--- | :--- | :--- | :--- | :--- |
-| < 60 seconds | **Short** | 5 seconds | 10 seconds | `_short_` |
-| >= 60 seconds | **Long** | 30 seconds | 60 seconds | `_long_` |
+| < 60 seconds | **Short** | 5 seconds | 10 seconds | `{video_name}_short_{log_id}.mp4` |
+| >= 60 seconds | **Long** | 30 seconds | 60 seconds | `{video_name}_long_{log_id}.mp4` |
 
 **Processing Workflow:**
 1.  **Duration Check:** System runs `ffprobe` to determine the exact length of the uploaded video.
 2.  **SQL Query:** Performs a `BETWEEN` query to find all motion events recorded during the video's timeframe.
 3.  **FFmpeg Clipping:** Executes precision clipping via `subprocess.run`, using the `-ss` (start time) and `-t` (duration) flags to extract relevant segments without re-encoding (`-c copy`).
-4.  **Filename Synchronization:** Generates uniquely formatted names: `{video_name}_{mode}_{log_id}.mp4`.
+4.  **Filename Synchronization:** The API response is dynamically synchronized with the generated file paths to ensure consistent naming.
 
 ---
 
-## 🚀 API Endpoints
+## 🚀 Production Deployment & Containerization
 
--   `POST /process-video`: Uploads an MP4 file and a start time. Returns a JSON list of generated clips with their local names and download URLs.
--   `POST /log-event`: Manually records the current server time into the motion logs table.
+Rottweiler is production-ready via **Docker** and **Docker Compose**, ensuring that system dependencies like FFmpeg are always present and data remains persistent.
+
+### 🐳 Docker Configuration
+-   **Base Image:** `python:3.11-slim`
+-   **System Dependencies:** FFmpeg and FFprobe are installed via `apt-get`.
+-   **Persistence:** Volumes are used to ensure that SQLite logs and generated video clips persist across container restarts.
+
+### 🛠️ Docker Compose
+```yaml
+services:
+  rottweiler-backend:
+    build: .
+    volumes:
+      - ./clips:/app/clips      # Video persistence
+      - ./data:/app/data        # Database persistence
+    environment:
+      - DB_PATH=/app/data/rottweiler.db
+```
+
+---
+
+## 💻 Local Development
+
+### Backend Setup
+1.  Navigate to `backend/`.
+2.  Install dependencies: `pip install -r requirements.txt`.
+3.  Start the server: `uvicorn main:app --reload`.
+
+### Frontend Setup
+1.  Navigate to `frontend/`.
+2.  Install dependencies: `npm install`.
+3.  Set Environment Variable: Create a `.env` file with `VITE_API_URL=http://localhost:8000`.
+4.  Start development server: `npm run dev`.
+
+---
+
+## 📡 API Endpoints
+
+-   `GET /health`: Returns `{"status": "online"}`.
+-   `POST /process-video`: Uploads an MP4 file and a start time. Returns a JSON list of generated clips.
+-   `POST /log-event`: Records the current server time into the motion logs.
 -   `GET /logs`: Retrieves a full history of recorded motion events.
--   `GET /clips/{name}`: Serves generated video segments from the static assets directory.
+-   `GET /clips/{name}`: Serves generated video segments.
