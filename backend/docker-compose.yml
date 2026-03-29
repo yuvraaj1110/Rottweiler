@@ -1,0 +1,13 @@
+services:
+  rottweiler-backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # This links your local 'clips' folder to the container's 'clips' folder
+      - ./clips:/app/clips
+      # This ensures your SQLite database persists
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///app/data/rottweiler.db
+    restart: always
