@@ -7,18 +7,18 @@ RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
+# Copy the backend and utils directories from the project root
+COPY backend/ ./backend/
+COPY utils/ ./backend/utils/
+
+# Set working directory to backend
+WORKDIR /app/backend
+
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
-COPY . .
-
-# Create directory for persistent SQLite database (will be mounted via volume)
-RUN mkdir -p /app/data
-
-# Ensure the clips directory exists (for temporary storage during processing)
-RUN mkdir -p clips
+# Create necessary directories: temp for uploads, data for persistent SQLite database
+RUN mkdir -p /app/backend/temp /app/data
 
 # Expose the port FastAPI runs on
 EXPOSE 8000
