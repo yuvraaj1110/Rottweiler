@@ -4,7 +4,7 @@ node_modules/
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
+*.class
 
 # Virtual environments
 venv/
@@ -31,3 +31,7 @@ build/
 # Vite
 frontend/node_modules/
 frontend/dist/
+
+# Temp and output files
+temp_*
+output_*

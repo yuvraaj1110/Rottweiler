@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global styles for Security Terminal aesthetic */
+body {
+  @apply bg-zinc-950 text-slate-200;
+}
+
+/* Ensure full height for proper layout */
+html, body, #root {
+  @apply h-full;
+}
+
+/* Smooth scrolling */
+html {
+  @apply scroll-smooth;
+}
