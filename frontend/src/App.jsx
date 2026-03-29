@@ -40,8 +40,9 @@ function App() {
     formData.append('start_time', startTime);
 
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.post(
-        'http://localhost:8000/process-video',
+        `${apiUrl}/process-video`,
         formData,
         {
           headers: {

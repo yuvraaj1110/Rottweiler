@@ -14,7 +14,7 @@ utils_path = Path(__file__).parent / "utils"
 sys.path.append(str(utils_path))
 
 # Database setup
-DB_PATH = os.getenv("DB_PATH", "/app/data/rottweiler.db")
+DB_PATH = "/app/data/rottweiler.db"
 
 
 def init_db():
@@ -54,9 +54,9 @@ def startup_event():
 
 
 # Create clips directory for serving generated videos
-clips_dir = Path("./clips")
+clips_dir = Path("/app/clips")
 clips_dir.mkdir(exist_ok=True)
-app.mount("/clips", StaticFiles(directory="clips"), name="clips")
+app.mount("/clips", StaticFiles(directory="/app/clips"), name="clips")
 
 
 @app.post("/process-video")
@@ -121,3 +121,9 @@ def get_logs():
     rows = c.fetchall()
     conn.close()
     return [{"id": row[0], "event_timestamp": row[1]} for row in rows]
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for deployment monitoring."""
+    return {"status": "online"}

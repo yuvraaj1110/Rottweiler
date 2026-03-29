@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import List, Tuple, Optional
 from pathlib import Path
 
-DB_PATH = os.getenv("DB_PATH", "/app/data/rottweiler.db")
+DB_PATH = "/app/data/rottweiler.db"
 
 
 def get_video_start_time(video_start_time_str: str) -> datetime:
