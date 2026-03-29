@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Clipper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold text-center mb-6">Video Clipper</h1>
+        <form id="clipForm" class="space-y-4">
+            <div>
+                <label for="videoFile" class="block text-sm font-medium text-gray-700 mb-2">Upload Video File</label>
+                <input type="file" id="videoFile" name="videoFile" accept="video/*" required 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="startTime" class="block text-sm font-medium text-gray-700 mb-2">Video Start Time</label>
+                <input type="datetime-local" id="startTime" name="startTime" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" 
+                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                    id="submitButton">
+                Process Video
+            </button>
+        </form>
+        <div id="result" class="mt-4 hidden">
+            <h2 class="text-lg font-semibold mb-2">Results:</h2>
+            <div id="resultContent" class="text-sm text-gray-700"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('clipForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const videoFile = document.getElementById('videoFile').files[0];
+            const startTime = document.getElementById('startTime').value;
+            
+            if (!videoFile || !startTime) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // Show loading state
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Processing...';
+            
+            formData.append('video', videoFile);
+            formData.append('start_time', startTime);
+            
+            try {
+                // In a real app, you'd send this to your backend
+                // For now, we'll simulate the processing
+                const resultDiv = document.getElementById('result');
+                const resultContent = document.getElementById('resultContent');
+                
+                // Simulate processing delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Mock results
+                resultContent.innerHTML = `
+                    <p>Video processed successfully!</p>
+                    <p>Start time: ${new Date(startTime).toLocaleString()}</p>
+                    <p>Found 2 motion events during video duration.</p>
+                    <p>Generated clips:</p>
+                    <ul>
+                        <li>clip_1_45s.mp4 (event at 45 seconds)</li>
+                        <li>clip_2_120s.mp4 (event at 120 seconds)</li>
+                    </ul>
+                `;
+                resultDiv.classList.remove('hidden');
+                
+            } catch (error) {
+                alert('Error processing video: ' + error.message);
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Process Video';
+            }
+        });
+    </script>
+</body>
+</html>
