@@ -65,27 +65,27 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-slate-200">
+    <div className="min-h-screen bg-midnight-bg text-slate-200 font-terminal">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-amber-400 mb-2">
+          <h1 className="text-4xl font-bold text-white mb-2">
             ROTTWEILER V2.0
           </h1>
-          <p className="text-xl text-slate-300">
+          <p className="text-xl text-midnight-slate">
             Security Terminal - Hardware-Linked Video Indexing System
           </p>
-          <div className="w-16 h-0.5 bg-amber-400 mx-auto mt-4"></div>
+          <div className="w-16 h-0.5 bg-midnight-accent mx-auto mt-4"></div>
         </div>
 
         {/* Main Card */}
-        <div className="bg-zinc-900/80 backdrop-blur-sm border border-amber-500/20 rounded-xl p-8 shadow-2xl">
+        <div className="bg-midnight-surface backdrop-blur-sm border border-midnight-accent/20 rounded-xl p-8 shadow-[0_0_15px_rgba(30,58,138,0.2)]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Video Upload Section */}
-            <div className="border-2 border-dashed border-amber-500/30 rounded-xl p-8 text-center transition-all hover:border-amber-400/50">
+            <div className="border-2 border-dashed border-midnight-slate/30 rounded-xl p-8 text-center transition-all hover:border-midnight-accent/50">
               <div className="space-y-4">
                 <div className="flex items-center justify-center space-x-3">
-                  <svg className="h-6 w-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-6 w-6 text-midnight-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l4-4m0 0l4-4m-4 4H18" />
                   </svg>
                   <p className="text-sm font-medium">
@@ -104,7 +104,7 @@ function App() {
                 <button 
                   type="button"
                   onClick={() => document.querySelector('input[type="file"]').click()}
-                  className="mt-4 inline-flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-zinc-950 font-semibold rounded-lg transition-colors"
+                  className="mt-4 inline-flex items-center px-4 py-2 bg-gradient-to-b from-midnight-cobalt to-midnight-accent hover:brightness-110 text-white font-semibold rounded-lg transition-all"
                 >
                   Browse Files
                 </button>
@@ -113,7 +113,7 @@ function App() {
 
             {/* Metadata Input */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-amber-300">
+              <label className="block text-sm font-medium text-midnight-slate">
                 Video Start Time (Real-world UTC)
               </label>
               <div className="relative">
@@ -121,7 +121,7 @@ function App() {
                   type="datetime-local"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-zinc-800 border border-amber-500/30 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus-ring-amber-400 focus:border-amber-400"
+                  className="w-full pl-10 pr-4 py-3 bg-midnight-bg border border-midnight-accent/30 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-midnight-cobalt focus:border-midnight-cobalt"
                   required
                 />
                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -136,7 +136,7 @@ function App() {
             <button
               type="submit"
               disabled={isProcessing || !videoFile || !startTime}
-              className="w-full flex items-center justify-center py-3 px-6 bg-amber-600 hover:bg-amber-700 text-zinc-950 font-bold rounded-lg transition-all duration-200 transform hover:-translate-y-0.5"
+              className="w-full flex items-center justify-center py-3 px-6 bg-gradient-to-b from-midnight-cobalt to-midnight-accent hover:brightness-110 text-white font-bold rounded-lg transition-all duration-200 transform hover:-translate-y-0.5"
             >
               {isProcessing ? (
                 <>
@@ -174,10 +174,10 @@ function App() {
         {clips.length > 0 && (
           <div className="mt-10">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-amber-400">
+              <h2 className="text-2xl font-bold text-white">
                 Generated Clips ({clips.length})
               </h2>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-midnight-slate">
                 Ready for download • {clips.length} clip{clips.length !== 1 ? 's' : ''}
               </div>
             </div>
@@ -185,11 +185,11 @@ function App() {
               {/* Responsive grid: 1col on mobile, 2col on tablet, 3col on desktop */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {clips.map((clip, index) => (
-                  <div key={index} className="bg-zinc-800/50 border border-amber-500/20 rounded-xl p-6 hover:border-amber-400/30 transition-all duration-200">
+                  <div key={index} className="bg-midnight-surface border border-midnight-accent/20 rounded-xl p-6 hover:border-midnight-accent/40 transition-all duration-200">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
-                        <div className="h-8 w-8 bg-amber-500/20 rounded-full flex items-center justify-center">
-                          <svg className="h-4 w-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="h-8 w-8 bg-midnight-accent/20 rounded-full flex items-center justify-center">
+                          <svg className="h-4 w-4 text-midnight-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
                         </div>
@@ -198,7 +198,7 @@ function App() {
                       <a 
                         href={clip.url} 
                         download={clip.name}
-                        className="inline-flex items-center px-3 py-1 bg-amber-600 hover:bg-amber-700 text-zinc-950 text-xs font-semibold rounded transition-colors"
+                        className="inline-flex items-center px-3 py-1 bg-gradient-to-b from-midnight-cobalt to-midnight-accent hover:brightness-110 text-white text-xs font-semibold rounded transition-colors"
                       >
                         Download
                         <svg className="ml-2 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
