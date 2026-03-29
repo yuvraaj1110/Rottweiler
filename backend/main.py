@@ -74,21 +74,17 @@ async def process_video(video: UploadFile = File(...), start_time: str = Form(..
             content = await video.read()
             buffer.write(content)
 
-        # Process video using our clipper utility
+        # Process video using our clipper utility (now returns Vultr URLs)
         from video_clipper import clip_video
 
-        clip_paths = clip_video(str(temp_file_path), start_time)
+        clip_urls = clip_video(str(temp_file_path), start_time)
 
-        # Move clips to serving directory and prepare response
+        # Prepare response with Vultr URLs
         clips = []
-        for clip_path in clip_paths:
-            clip_path_obj = Path(clip_path)
-            clip_name = clip_path_obj.name
-            # Move clip to serving directory
-            serving_path = clips_dir / clip_name
-            shutil.move(str(clip_path_obj), str(serving_path))
-
-            clips.append({"name": clip_name, "url": f"/clips/{clip_name}"})
+        for i, url in enumerate(clip_urls):
+            # Extract filename from URL for display purposes
+            filename = url.split("/")[-1] if "/" in url else f"clip_{i}.mp4"
+            clips.append({"name": filename, "url": url})
 
         return {"clips": clips}
 
